@@ -26,6 +26,7 @@ func NewDefaultLookupLib() *LookupLib {
 	serverString := config.Servers[0] + ":" + config.Port
 	l := new(LookupLib)
 	l.serverString = serverString
+	l.Search = config.Search
 	return l
 }
 func NewLookupLib(serverString string) *LookupLib {
@@ -36,6 +37,7 @@ func NewLookupLib(serverString string) *LookupLib {
 
 type LookupLib struct {
 	serverString string
+	search []string
 }
 
 func (l *LookupLib) LookupSRV(name string) ([]net.SRV, error) {
@@ -54,6 +56,15 @@ func (l *LookupLib) LookupA(name string) (string, error) {
 	}
 	return l.parseAAnswer(answer)
 }
+
+func (l *LookupLib) LookupAllA(name string) ([]string, error) {
+        answer, err := l.lookupType(name, "A")
+        if err != nil {
+                return nil, err
+        }
+        return l.parseAllAAnswer(answer)
+}
+
 
 func (l *LookupLib) parseSRVAnswer(answer *dns.Msg) ([]net.SRV, error) {
 	var srvs = make([]net.SRV, 0)
@@ -81,6 +92,20 @@ func (l *LookupLib) parseAAnswer(answer *dns.Msg) (string, error) {
 		//		return string(a.A[:n]), nil
 	}
 	return "", fmt.Errorf("Could not parse A record")
+}
+
+func (l *LookupLib) parseAllAAnswer(answer *dns.Msg) ([]string, error) {
+	ips := []string{}
+	if len(answer.Answer) == 0 {
+		return nil, fmt.Errorf("Answer Empty")
+	}
+	for i := 0; i < len(answer.Answer); i++ {
+	        if a, ok := answer.Answer[i].(*dns.A); ok {
+       	           ips = append(ips, a.A.String())
+        	}
+	}
+
+	return ips, nil
 }
 
 func (l *LookupLib) lookupType(name string, recordType string) (*dns.Msg, error) {
