@@ -37,7 +37,7 @@ func NewLookupLib(serverString string) *LookupLib {
 
 type LookupLib struct {
 	serverString string
-	search []string
+	Search []string
 }
 
 func (l *LookupLib) LookupSRV(name string) ([]net.SRV, error) {
